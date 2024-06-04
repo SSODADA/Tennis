@@ -118,7 +118,7 @@ int main()
     const sf::Time AITime = sf::seconds(0.1f);
     const float paddleSpeed = 400.f;
     float rightPaddleSpeed = 0.f;
-    const float ballSpeed = 400.f;
+    float ballSpeed = 400.f;
     float ballAngle = 0.f; // to be changed later
     int playerscore = 0;
     int computerscore = 0;
@@ -139,16 +139,6 @@ int main()
         sf::Event event;
         while (window.pollEvent(event))
         {
-            if (playerscore >= maxscore || computerscore >= maxscore)
-            {
-                // Display the winner
-                isPlaying = false;
-                if (playerscore >= maxscore)
-                    pauseMessage.setString("You Won!\n\nPress space to continue playing or escape to exit.");
-                else
-                    pauseMessage.setString("You Lost!\n\nPress space to continue playing or escape to exit.");
-            }
-
             // Update scoreText to display scores
             scoreText.setString(std::to_string(playerscore) + " : " + std::to_string(computerscore));
 
@@ -162,25 +152,13 @@ int main()
                 window.draw(rightPaddle);
                 window.draw(ball);
                 window.draw(scoreText);
+                // Check the collisions between the ball and the paddles
             }
             else
             {
                 // Draw the pause message and SFML logo
                 window.draw(pauseMessage);
                 window.draw(sfmlLogo);
-            }
-
-            if (ball.getPosition().x - ballRadius < 0.f)
-            {
-                // Computer scores
-                computerscore++;
-                resetGame(leftPaddle, rightPaddle, ball, gameWidth, gameHeight, paddleSize.y, ballRadius, paddleSpeed);
-            }
-            if (ball.getPosition().x + ballRadius > gameWidth)
-            {
-                // Player scores
-                playerscore++;
-                resetGame(leftPaddle, rightPaddle, ball, gameWidth, gameHeight, paddleSize.y, ballRadius, paddleSpeed);
             }
 
             // Window closed or escape key pressed: exit
@@ -227,6 +205,59 @@ int main()
 
         if (isPlaying)
         {
+            // Left Paddle
+            if (ball.getPosition().x - ballRadius < leftPaddle.getPosition().x + paddleSize.x / 2 &&
+                ball.getPosition().x - ballRadius > leftPaddle.getPosition().x &&
+                ball.getPosition().y + ballRadius >= leftPaddle.getPosition().y - paddleSize.y / 2 &&
+                ball.getPosition().y - ballRadius <= leftPaddle.getPosition().y + paddleSize.y / 2)
+            {
+                // Increase ball speed
+                ballSpeed += 50.f;
+
+                // Change ball color to brighter
+                ball.setFillColor(sf::Color::Yellow);
+
+                if (ball.getPosition().y > leftPaddle.getPosition().y)
+                    ballAngle = pi - ballAngle + static_cast<float>(std::rand() % 20) * pi / 180;
+                else
+                    ballAngle = pi - ballAngle - static_cast<float>(std::rand() % 20) * pi / 180;
+
+                ballSound.play();
+                ball.setPosition(leftPaddle.getPosition().x + ballRadius + paddleSize.x / 2 + 0.1f, ball.getPosition().y);
+            }
+
+            // Right Paddle
+            if (ball.getPosition().x + ballRadius > rightPaddle.getPosition().x - paddleSize.x / 2 &&
+                ball.getPosition().x + ballRadius < rightPaddle.getPosition().x &&
+                ball.getPosition().y + ballRadius >= rightPaddle.getPosition().y - paddleSize.y / 2 &&
+                ball.getPosition().y - ballRadius <= rightPaddle.getPosition().y + paddleSize.y / 2)
+            {
+                // Increase ball speed
+                ballSpeed += 50.f;
+
+                // Change ball color to brighter
+                ball.setFillColor(sf::Color::Yellow);
+
+                if (ball.getPosition().y > rightPaddle.getPosition().y)
+                    ballAngle = pi - ballAngle + static_cast<float>(std::rand() % 20) * pi / 180;
+                else
+                    ballAngle = pi - ballAngle - static_cast<float>(std::rand() % 20) * pi / 180;
+
+                ballSound.play();
+                ball.setPosition(rightPaddle.getPosition().x - ballRadius - paddleSize.x / 2 - 0.1f, ball.getPosition().y);
+            }
+
+            if (playerscore == maxscore || computerscore == maxscore)
+            {
+                // Display the winner
+                isPlaying = false;
+                if (playerscore >= maxscore)
+                    pauseMessage.setString("You Won!\n\nPress space to continue playing or escape to exit.");
+                else
+                    pauseMessage.setString("You Lost!\n\nPress space to continue playing or escape to exit.");
+            }
+
+
             float deltaTime = clock.restart().asSeconds();
 
             // Move the player's paddle
@@ -281,14 +312,18 @@ int main()
             if (ball.getPosition().x - ballRadius < 0.f)
             {
                 // Computer scores
-                ++computerscore;
+                computerscore++;
                 resetGame(leftPaddle, rightPaddle, ball, gameWidth, gameHeight, paddleSize.y, ballRadius, paddleSpeed);
+                leftPaddle.setPosition(10.f + paddleSize.x / 2.f, gameHeight / 2.f);
+                rightPaddle.setPosition(gameWidth - 10.f - paddleSize.x / 2.f, gameHeight / 2.f);
             }
             if (ball.getPosition().x + ballRadius > gameWidth)
             {
                 // Player scores
-                ++playerscore;
+                playerscore++;
                 resetGame(leftPaddle, rightPaddle, ball, gameWidth, gameHeight, paddleSize.y, ballRadius, paddleSpeed);
+                leftPaddle.setPosition(10.f + paddleSize.x / 2.f, gameHeight / 2.f);
+                rightPaddle.setPosition(gameWidth - 10.f - paddleSize.x / 2.f, gameHeight / 2.f);
             }
             if (ball.getPosition().y - ballRadius < 0.f)
             {
